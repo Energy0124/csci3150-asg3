@@ -1,0 +1,9 @@
+Exception: STATUS_ACCESS_VIOLATION at eip=6114DED5
+eax=00000000 ebx=612D5028 ecx=20000038 edx=00000000 esi=004030AE edi=00000000
+ebp=0061CC58 esp=0061B670 program=C:\Users\Energy\Documents\Github\csci3150-asg3-release-v2\csci3150-asg3-release\asg3-pthread.exe, pid 8048, thread main
+cs=0023 ds=002B es=002B fs=0053 gs=002B ss=002B
+Stack trace:
+Frame     Function  Args
+0061CC58  6114DED5 (00000005, 0061CC7C, 20010100, 00000000)
+0061CD18  6100842E (00000000, 0061CD74, 61007530, 00000000)
+End of stack trace

@@ -218,3 +218,11 @@ pip-log.txt
 .idea/
 testcases/
 res/
+build/
+/output/out.txt
+asg3-openmp.exe
+asg3-pthread.exe
+asg3-pthread.exe.stackdump
+csci3150_asg3_release_pthread_v2.exe.stackdump
+o2-1.txt
+output.txt

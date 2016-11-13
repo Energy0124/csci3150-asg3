@@ -134,7 +134,6 @@ function partb {
         exit -1
     fi
 
-
     if [ "$2" == "scaleout" ]
     then
         echo ""
@@ -142,20 +141,8 @@ function partb {
         echo ""
 
         TESTCASE="S0"
-        # check read data time
-        { time ./read ${INPUT_DIR}/${TESTCASE}/input1.txt ${INPUT_DIR}/${TESTCASE}/input2.txt ${OUTPUT_DIR}/outputread.txt 1;} 2>${OUTPUT_DIR}/tempperfread;
-        perf=`cat ${OUTPUT_DIR}/tempperfread | grep "real"`
-        perf=`echo "$perf" | cut -f2`
-        midx=`echo "${perf}" | grep -aob 'm' | grep -oE '[0-9]+'`
-        min=${perf:0:${midx}}
-        sidx=`echo "${perf}" | grep -aob 's' | grep -oE '[0-9]+'`
-        midx=`expr ${midx} + 1`
-        sec=${perf:${midx}:`expr ${sidx} - ${midx}`}
-        readcalc=$(echo ${min} ${sec} | awk '{ printf "%.3f", $1 * 60 + $2 }')
 
-        # execute number of thread = 4
         { time ./$EXCUTABLE ${INPUT_DIR}/${TESTCASE}/input1.txt ${INPUT_DIR}/${TESTCASE}/input2.txt ${OUTPUT_DIR}/output${TESTCASE}.txt 4;} 2>${OUTPUT_DIR}/tempperf4;
-
         if diff ${OUTPUT_DIR}/output${TESTCASE}.txt ${INPUT_DIR}/${TESTCASE}/expected.txt >/dev/null 2>&1
         then
             echo
@@ -165,12 +152,12 @@ function partb {
             exit -1
         fi
 
-       { time ./$EXCUTABLE ${INPUT_DIR}/${TESTCASE}/input1.txt ${INPUT_DIR}/${TESTCASE}/input2.txt ${OUTPUT_DIR}/output${TESTCASE}.txt 3;} 2>${OUTPUT_DIR}/tempperf3;
-       { time ./$EXCUTABLE ${INPUT_DIR}/${TESTCASE}/input1.txt ${INPUT_DIR}/${TESTCASE}/input2.txt ${OUTPUT_DIR}/output${TESTCASE}.txt 2;} 2>${OUTPUT_DIR}/tempperf2; 
-       { time ./$EXCUTABLE ${INPUT_DIR}/${TESTCASE}/input1.txt ${INPUT_DIR}/${TESTCASE}/input2.txt ${OUTPUT_DIR}/output${TESTCASE}.txt 1;} 2>${OUTPUT_DIR}/tempperf1;
+        { time ./$EXCUTABLE ${INPUT_DIR}/${TESTCASE}/input1.txt ${INPUT_DIR}/${TESTCASE}/input2.txt ${OUTPUT_DIR}/output${TESTCASE}.txt 3;} 2>${OUTPUT_DIR}/tempperf3;
+        { time ./$EXCUTABLE ${INPUT_DIR}/${TESTCASE}/input1.txt ${INPUT_DIR}/${TESTCASE}/input2.txt ${OUTPUT_DIR}/output${TESTCASE}.txt 2;} 2>${OUTPUT_DIR}/tempperf2; 
+        { time ./$EXCUTABLE ${INPUT_DIR}/${TESTCASE}/input1.txt ${INPUT_DIR}/${TESTCASE}/input2.txt ${OUTPUT_DIR}/output${TESTCASE}.txt 1;} 2>${OUTPUT_DIR}/tempperf1;
 
         before=0
-        for i in 4 3 2 1
+        for i in 1 2 3 4
         do
             perf=`cat ${OUTPUT_DIR}/tempperf${i} | grep "real"`
             perf=`echo "$perf" | cut -f2`
@@ -184,15 +171,7 @@ function partb {
             sec=${perf:${midx}:`expr ${sidx} - ${midx}`}
 #            echo $sec
             calc=$(echo ${min} ${sec} | awk '{ printf "%.3f", $1 * 60 + $2 }')
-            duration=$(echo ${calc} ${readcalc} | awk '{ printf "%3f", $1 - $2 }')
-            zero=0
-            tmp=`echo $duration'>'$zero | bc -l`
-            if [ $tmp -eq 0 ]
-            then
-                echo $i thread using 0 seconds
-            else
-                echo $i thread using $calc - $readcalc = ${duration} seconds
-            fi
+#            echo $calc
 
             comp=`echo $before'<'$calc | bc -l`
             if [ "$comp" == "1" ]
@@ -217,44 +196,13 @@ function partb {
         
 #        cat ${INPUT_DIR}/${TESTCASE}/README
 #        echo ""
-
-        # check read data time
-        { time ./read ${INPUT_DIR}/${TESTCASE}/input1.txt ${INPUT_DIR}/${TESTCASE}/input2.txt ${OUTPUT_DIR}/outputread.txt 1;} 2>${OUTPUT_DIR}/tempperfread;
-        perf=`cat ${OUTPUT_DIR}/tempperfread | grep "real"`
-        perf=`echo "$perf" | cut -f2`
-        midx=`echo "${perf}" | grep -aob 'm' | grep -oE '[0-9]+'`
-        min=${perf:0:${midx}}
-        sidx=`echo "${perf}" | grep -aob 's' | grep -oE '[0-9]+'`
-        midx=`expr ${midx} + 1`
-        sec=${perf:${midx}:`expr ${sidx} - ${midx}`}
-        readcalc=$(echo ${min} ${sec} | awk '{ printf "%.3f", $1 * 60 + $2 }')
-
+        
         { time ./$EXCUTABLE ${INPUT_DIR}/${TESTCASE}/input1.txt ${INPUT_DIR}/${TESTCASE}/input2.txt ${OUTPUT_DIR}/output${TESTCASE}.txt $3;} 2>${OUTPUT_DIR}/tempperf;
 
         if diff ${OUTPUT_DIR}/output${TESTCASE}.txt ${INPUT_DIR}/${TESTCASE}/expected.txt >/dev/null 2>&1
         then
-            perf=`cat ${OUTPUT_DIR}/tempperf | grep "real"`
-            perf=`echo "$perf" | cut -f2`
-            midx=`echo "${perf}" | grep -aob 'm' | grep -oE '[0-9]+'`
-#            echo $midx
-            min=${perf:0:${midx}}
-#            echo $min
-            sidx=`echo "${perf}" | grep -aob 's' | grep -oE '[0-9]+'`
-#            echo $sidx
-            midx=`expr ${midx} + 1`
-            sec=${perf:${midx}:`expr ${sidx} - ${midx}`}
-#            echo $sec
-            calc=$(echo ${min} ${sec} | awk '{ printf "%.3f", $1 * 60 + $2 }')
-            duration=$(echo ${calc} ${readcalc} | awk '{ printf "%3f", $1 - $2 }')
-            zero=0
-            tmp=`echo $duration'>'$zero | bc -l`
-            if [ $tmp -eq 0 ]
-            then
-                echo testcase ${TESTCASE} using 0 seconds
-            else
-                echo testcase ${TESTCASE} using $calc - $readcalc = ${duration} seconds
-            fi
-#            rm ${OUTPUT_DIR}/tempperf
+            cat ${OUTPUT_DIR}/tempperf | grep "real"
+            rm ${OUTPUT_DIR}/tempperf
         else
             echo -e "${BD}${RED}""Failed Testcase $TESTCASE! ${ED}"
             echo -e "${RED}unmatched:     yours             vs          expected${ED}"

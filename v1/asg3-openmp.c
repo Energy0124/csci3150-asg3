@@ -1,5 +1,6 @@
 /*
 * CSCI3150 Assignment 3 - Implement pthread and openmp program
+* Feel free to modify the given code.
 *
 */
 
@@ -8,7 +9,7 @@
 #include <omp.h>
 
 /* Function Declaration */
-extern int *readdata(char *filename, long *number);
+
 /* Main */
 
 int main(int argc, char *argv[]) {
@@ -18,15 +19,6 @@ int main(int argc, char *argv[]) {
 
         return -1;
     }
-
-    int *array1, *array2;
-    long num1, num2;
-
-    array1 = readdata(argv[1], &num1);
-    array2 = readdata(argv[2], &num2);
-
-    /* do your assignment start from here */
-
 
     FILE *fp=fopen(argv[3], "w");
     fclose(fp);
