@@ -216,7 +216,7 @@ pip-log.txt
 .mr.developer.cfg
 
 .idea/
-testcases/
+#testcases/
 res/
 build/
 /output/out.txt
@@ -226,3 +226,6 @@ asg3-pthread.exe.stackdump
 csci3150_asg3_release_pthread_v2.exe.stackdump
 o2-1.txt
 output.txt
+/testcases/S2/
+/testcases/S1/
+/testcases/S0/
