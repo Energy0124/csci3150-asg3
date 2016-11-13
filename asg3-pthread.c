@@ -179,5 +179,5 @@ int main(int argc, char *argv[]) {
 void printTimeElapsed(struct timeval *t0, struct timeval *t1, double elapsed) {
     gettimeofday(t1, 0);
     elapsed = timedifference_msec((*t0), (*t1));
-    printf("\nCode executed in %f milliseconds.\n", elapsed);
+    printf("Code executed in %f milliseconds.\n", elapsed);
 }
