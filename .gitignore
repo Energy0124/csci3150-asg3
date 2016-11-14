@@ -217,7 +217,7 @@ pip-log.txt
 
 .idea/
 #testcases/
-res/
+
 build/
 /output/out.txt
 asg3-openmp.exe
@@ -229,3 +229,15 @@ output.txt
 /testcases/S2/
 /testcases/S1/
 /testcases/S0/
+/res/outputC8.txt
+/res/outputC2.txt
+/res/outputC9.txt
+/res/outputC11.txt
+/res/outputC10.txt
+/res/outputC1.txt
+/res/outputC7.txt
+/res/outputC12.txt
+/res/outputC3.txt
+/res/outputC6.txt
+/res/outputC4.txt
+/res/outputC5.txt
