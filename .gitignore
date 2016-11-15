@@ -241,3 +241,10 @@ output.txt
 /res/outputC6.txt
 /res/outputC4.txt
 /res/outputC5.txt
+/csci3150_asg3_release_pthread.exe.stackdump
+/gdb.exe.stackdump
+csci3150_asg3_release_pthread.exe.stackdump
+gdb.exe.stackdump
+res/outputS0.txt
+res/tempperf
+res/tempperfread
