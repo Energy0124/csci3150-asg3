@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include <memory.h>
 #include <stdint.h>
+#include <sys/time.h>
 
 
 //#define BUFFER_SIZE 1024 + 1
