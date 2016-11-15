@@ -35,6 +35,10 @@ void printTimeElapsed(struct timeval *t0, struct timeval *t1, double elapsed);
 /* Main */
 
 static char hashtable[HASHTABLE_SIZE] = {0};
+static char hashtable2[HASHTABLE_SIZE] = {0};
+static int cache[4][HASHTABLE_SIZE / 4 + 1] = {0};
+
+//static int cacheIndex[4]={0};
 //static bool hashtable1[100000000] = {false};
 //static bool hashtable2[100000000] = {false};
 //static bool hashtable3[100000000] = {false};
@@ -48,6 +52,7 @@ static char hashtable[HASHTABLE_SIZE] = {0};
 double timedifference_msec(struct timeval t0, struct timeval t1) {
     return (t1.tv_sec - t0.tv_sec) * 1000.0f + (t1.tv_usec - t0.tv_usec) / 1000.0f;
 }
+
 static uint16_t const str100p[100] = { /* 0x3030, 0x3130, 0x3230 .. 0x3930, 0x3031 .. 0x3939 */
 
         0x3030, 0x3130, 0x3230, 0x3330, 0x3430, 0x3530, 0x3630, 0x3730, 0x3830, 0x3930,
@@ -63,14 +68,12 @@ static uint16_t const str100p[100] = { /* 0x3030, 0x3130, 0x3230 .. 0x3930, 0x30
 };
 
 //int to char* in base10
-char *itoaBase10(char *buf, uint32_t val)
-{
+char *itoaBase10(char *buf, uint32_t val) {
     char *p = &buf[10];
 
     *p = '\0';
 
-    while(val >= 100)
-    {
+    while (val >= 100) {
         uint32_t const old = val;
 
         p -= 2;
@@ -86,31 +89,116 @@ char *itoaBase10(char *buf, uint32_t val)
 
 //find len of uint
 int uintlen(unsigned x) {
-    if(x>=100000) {
-        if(x>=10000000) {
-            if(x>=1000000000) return 10;
-            if(x>=100000000) return 9;
+    if (x >= 100000) {
+        if (x >= 10000000) {
+            if (x >= 1000000000) return 10;
+            if (x >= 100000000) return 9;
             return 8;
         }
-        if(x>=1000000) return 7;
+        if (x >= 1000000) return 7;
         return 6;
     } else {
-        if(x>=1000) {
-            if(x>=10000) return 5;
+        if (x >= 1000) {
+            if (x >= 10000) return 5;
             return 4;
         } else {
-            if(x>=100) return 3;
-            if(x>=10) return 2;
+            if (x >= 100) return 3;
+            if (x >= 10) return 2;
             return 1;
         }
     }
 }
 
+typedef struct readdataParameter {
+    char *filename;
+    long *number;
+    int *array;
+} ReadParameter;
+
+typedef struct insertParameter {
+    pthread_t readThread_tid;
+    int tableID;
+} InsertParameter;
+
+
+int *array1, *array2;
+long num1, num2;
+pthread_t readThread_tid1, readThread_tid2;
+pthread_t insertThread_tid1, insertThread_tid2;
+ReadParameter readParameter1;
+ReadParameter readParameter2;
+InsertParameter insertParameter1;
+InsertParameter insertParameter2;
+struct timeval t0;
+struct timeval t1;
+double elapsed;
+
+
+void *parallel_readdata(void *parameter) {
+    ReadParameter *readParameter = (ReadParameter *) parameter;
+    printf("Start reading %s \n", (*readParameter).filename);
+    printTimeElapsed(&t0, &t1, elapsed);
+    (*readParameter).array = readdata((*readParameter).filename, (*readParameter).number);
+    printf("Done reading %s \n", (*readParameter).filename);
+    printTimeElapsed(&t0, &t1, elapsed);
+}
+
+void *parallel_insert(void *parameter) {
+
+
+    InsertParameter *insertParameter = (InsertParameter *) parameter;
+
+    pthread_join((*insertParameter).readThread_tid, NULL);
+
+    if ((*insertParameter).tableID == 1) {
+        array1 = readParameter1.array;
+    } else if ((*insertParameter).tableID == 2) {
+        array2 = readParameter2.array;
+    }
+
+    printf("Read Thread %d joined\n", (*insertParameter).tableID);
+    printTimeElapsed(&t0, &t1, elapsed);
+
+    printf("Start inserting array %d \n", (*insertParameter).tableID);
+    printTimeElapsed(&t0, &t1, elapsed);
+    if ((*insertParameter).tableID == 1) {
+        printf("Start inserting first file data to array.\n");
+        printTimeElapsed(&t0, &t1, elapsed);
+        unsigned int i = 0;
+        for (i = 0; i < num1; i++) {
+
+            hashtable[array1[i]] = 1;
+        }
+        printf("Inserting first file data completed.\n");
+        printTimeElapsed(&t0, &t1, elapsed);
+    } else if ((*insertParameter).tableID == 2) {
+        printf("Start inserting second file data to array.\n");
+        printTimeElapsed(&t0, &t1, elapsed);
+        unsigned int i = 0;
+        for (i = 0; i < num2; i++) {
+
+            hashtable2[array2[i]] = 1;
+        }
+        /*    for (i = 0; i < num2; i++) {
+
+            if (hashtable[array2[i]] == 1) {
+                hashtable[array2[i]] = 3;
+
+            } else if (hashtable[array2[i]] == 0) {
+                hashtable[array2[i]] = 2;
+            }
+        }*/
+        printf("Inserting second file data completed.\n");
+        printTimeElapsed(&t0, &t1, elapsed);
+    }
+
+
+    printf("Done inserting array %d \n", (*insertParameter).tableID);
+    printTimeElapsed(&t0, &t1, elapsed);
+}
 
 int main(int argc, char *argv[]) {
-    struct timeval t0;
-    struct timeval t1;
-    double elapsed;
+
 
     gettimeofday(&t0, 0);
 
@@ -123,45 +211,119 @@ int main(int argc, char *argv[]) {
 
 
 
-     int *array1, *array2;
-    long num1, num2;
+
+    if (atoi(argv[4]) > 1) {
+        readParameter1.filename = argv[1];
+        readParameter1.number = &num1;
+        readParameter1.array = array1;
+
+        pthread_create(&readThread_tid1, NULL, parallel_readdata, &readParameter1);
+        printf("Read Thread 1 created \n");
+        printTimeElapsed(&t0, &t1, elapsed);
+
+        readParameter2.filename = argv[2];
+        readParameter2.number = &num2;
+        readParameter2.array = array2;
+
+        pthread_create(&readThread_tid2, NULL, parallel_readdata, &readParameter2);
+        printf("Read Thread 2 created \n");
+        printTimeElapsed(&t0, &t1, elapsed);
+/*
+        pthread_join(readThread_tid1, NULL);
+        array1 = readParameter1.array;
+        printf("Read Thread 1 joined \n");
+        printTimeElapsed(&t0, &t1, elapsed);
+        pthread_join(readThread_tid2, NULL);
+        array2 = readParameter2.array;
+        printf("Read Thread 2 joined \n");
+        printTimeElapsed(&t0, &t1, elapsed);
+*/
 
 
-    array1 = readdata(argv[1], &num1);
-    array2 = readdata(argv[2], &num2);
+    } else {
 
+        array1 = readdata(argv[1], &num1);
+        printf("Read file1.\n");
+        printTimeElapsed(&t0, &t1, elapsed);
+        array2 = readdata(argv[2], &num2);
+        printf("Read file2.\n");
+        printTimeElapsed(&t0, &t1, elapsed);
+    }
+
+
+
+
+//    array1 = readdata(argv[1], &num1);
+//    array2 = readdata(argv[2], &num2);
     /* do your assignment start from here */
-    //array1 = readdata(argv[1], &num1);
-    unsigned int i = 0;
-    for (i = 0; i < num1; i++) {
 
-        hashtable[array1[i]] = 1;
-    }
-    printf("Inserting first file data to hash table completed.\n");
-    printTimeElapsed(&t0, &t1, elapsed);
+    if (atoi(argv[4]) > 1) {
+        insertParameter1.tableID=1;
+        insertParameter1.readThread_tid=readThread_tid1;
+        pthread_create(&insertThread_tid1,NULL,parallel_insert,&insertParameter1);
 
-    for (i = 0; i < num2; i++) {
+        printf("Insert Thread 1 created \n");
+        printTimeElapsed(&t0, &t1, elapsed);
 
-        if (hashtable[array2[i]] == 1) {
-            hashtable[array2[i]] = 3;
+        insertParameter2.tableID=2;
+        insertParameter2.readThread_tid=readThread_tid2;
+        pthread_create(&insertThread_tid2,NULL,parallel_insert,&insertParameter2);
 
-        } else if (hashtable[array2[i]] == 0) {
-            hashtable[array2[i]] = 2;
+        printf("Insert Thread 2 created \n");
+        printTimeElapsed(&t0, &t1, elapsed);
+    } else {
+
+        printf("Start inserting first file data to array.\n");
+        printTimeElapsed(&t0, &t1, elapsed);
+        unsigned int i = 0;
+        for (i = 0; i < num1; i++) {
+
+            hashtable[array1[i]] = 1;
         }
-    }
-    printf("Inserting second file data to hash table completed.\n");
-    printTimeElapsed(&t0, &t1, elapsed);
+        printf("Inserting first file data completed.\n");
+        printTimeElapsed(&t0, &t1, elapsed);
 
-    char writeBuffer[WRITE_BUFFER_SIZE]={'\0'};
+
+        printf("Start inserting second file data to array.\n");
+        printTimeElapsed(&t0, &t1, elapsed);
+        for (i = 0; i < num2; i++) {
+
+            hashtable2[array2[i]] = 1;
+        }
+        /*    for (i = 0; i < num2; i++) {
+
+            if (hashtable[array2[i]] == 1) {
+                hashtable[array2[i]] = 3;
+
+            } else if (hashtable[array2[i]] == 0) {
+                hashtable[array2[i]] = 2;
+            }
+        }*/
+        printf("Inserting second file data completed.\n");
+        printTimeElapsed(&t0, &t1, elapsed);
+    }
+
+    if (atoi(argv[4]) > 1) {
+        pthread_join(insertThread_tid2,NULL);
+        printf("Insert Thread 2 joined\n");
+        printTimeElapsed(&t0, &t1, elapsed);
+
+        pthread_join(insertThread_tid1,NULL);
+        printf("Insert Thread 1 joined\n");
+        printTimeElapsed(&t0, &t1, elapsed);
+    }
+
+    char writeBuffer[WRITE_BUFFER_SIZE] = {'\0'};
     FILE *outputFile = fopen(argv[3], "w");
     setvbuf(outputFile, writeBuffer, _IOFBF, WRITE_BUFFER_SIZE);
     char strBuffer[STR_BUFFER_SIZE];
+    unsigned int i = 0;
     for (i = 0; i < HASHTABLE_SIZE; i++) {
-        if (hashtable[i] == 3) {
-//            char *str=itoaBase10(strBuffer,  i);
-//            fwrite(str, 1, (size_t) uintlen(i), outputFile);
-//            fwrite("\n", 1, 1, outputFile);
-            fprintf(outputFile,"%d\n",i);
+        if (hashtable[i] && hashtable2[i]) {
+            char *str = itoaBase10(strBuffer, i);
+            fwrite(str, 1, (size_t) uintlen(i), outputFile);
+            fwrite("\n", 1, 1, outputFile);
+            //fprintf(outputFile,"%d\n",i);
         }
     }
     fflush(outputFile);

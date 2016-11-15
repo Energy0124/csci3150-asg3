@@ -4,10 +4,10 @@ project(csci3150_asg3_release)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 set(SOURCE_FILES_PTHREAD
-    asg3-pthread.c v2/util.c)
+    asg3-pthread.c util.c)
 
 set(SOURCE_FILES_OPENMP
-    asg3-openmp.c v2/util.c)
+    asg3-openmp.c util.c)
 
 set(SOURCE_FILES_PTHREAD_V2
         v2/asg3-pthread.c
