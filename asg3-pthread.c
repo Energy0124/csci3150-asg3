@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include <memory.h>
 #include <stdint.h>
+#include <sys/stat.h>
 #include <sys/time.h>
 
 
@@ -121,9 +122,17 @@ typedef struct insertParameter {
     int tableID;
 } InsertParameter;
 
+typedef struct subInsertParameter {
+    int start;
+    int end;
+    int tableID;
+} SubInsertParameter;
+
 
 int *array1, *array2;
 long num1, num2;
+int numOfThread = 0;
+int maxNumOfThread = 0;
 pthread_t readThread_tid1, readThread_tid2;
 pthread_t insertThread_tid1, insertThread_tid2;
 ReadParameter readParameter1;
@@ -144,12 +153,36 @@ void *parallel_readdata(void *parameter) {
     printTimeElapsed(&t0, &t1, elapsed);
 }
 
+void *sub_parallel_insert(void *parameter) {
+
+    int start = (*((SubInsertParameter *) parameter)).start;
+    int end = (*((SubInsertParameter *) parameter)).end;
+    printf("Start sub inserting array %d, from %d to %d \n", (*((SubInsertParameter *) parameter)).tableID,start, end);
+    printTimeElapsed(&t0, &t1, elapsed);
+    int *array = NULL;
+    char *table = NULL;
+    if ((*((SubInsertParameter *) parameter)).tableID == 1) {
+        array = array1;
+        table = hashtable;
+    } else if ((*((SubInsertParameter *) parameter)).tableID == 2) {
+        array = array2;
+        table = hashtable2;
+    }
+    int i;
+    for (i = start; i < end; ++i) {
+        table[array[i]] = 1;
+    }
+    printf("Done sub inserting array %d, from %d to %d \n", (*((SubInsertParameter *) parameter)).tableID,start, end);
+    printTimeElapsed(&t0, &t1, elapsed);
+}
+
 void *parallel_insert(void *parameter) {
 
 
     InsertParameter *insertParameter = (InsertParameter *) parameter;
 
     pthread_join((*insertParameter).readThread_tid, NULL);
+    numOfThread--;
 
     if ((*insertParameter).tableID == 1) {
         array1 = readParameter1.array;
@@ -162,23 +195,105 @@ void *parallel_insert(void *parameter) {
 
     printf("Start inserting array %d \n", (*insertParameter).tableID);
     printTimeElapsed(&t0, &t1, elapsed);
+
+    pthread_t tid1, tid2;
+
     if ((*insertParameter).tableID == 1) {
         printf("Start inserting first file data to array.\n");
         printTimeElapsed(&t0, &t1, elapsed);
-        unsigned int i = 0;
-        for (i = 0; i < num1; i++) {
+        if (maxNumOfThread > 2) {
 
-            hashtable[array1[i]] = 1;
+            if (maxNumOfThread == 3) {
+                SubInsertParameter subInsertParameter1;
+                subInsertParameter1.tableID = 1;
+                subInsertParameter1.start = 0;
+                subInsertParameter1.end = num1 - 1 - num1 / (maxNumOfThread - 1);
+                pthread_create(&tid1, NULL, sub_parallel_insert, &subInsertParameter1);
+            } else if (maxNumOfThread > 3) {
+                SubInsertParameter subInsertParameter1;
+                subInsertParameter1.tableID = 1;
+                subInsertParameter1.start = 0;
+                subInsertParameter1.end = num1 - 1 - ((num1 / (maxNumOfThread - 1)) * 2);
+                pthread_create(&tid1, NULL, sub_parallel_insert, &subInsertParameter1);
+                SubInsertParameter subInsertParameter2;
+                subInsertParameter2.tableID = 1;
+                subInsertParameter2.start = num1 - 1 - ((num1 / (maxNumOfThread - 1)) * 2);
+                subInsertParameter2.end = num1 - 1 - num1 / (maxNumOfThread - 1);
+                pthread_create(&tid2, NULL, sub_parallel_insert, &subInsertParameter2);
+            }
+
+            printf("Start sub inserting array 1, from %d to %d \n", num1 - 1 - num1 / (maxNumOfThread - 1), num1);
+            printTimeElapsed(&t0, &t1, elapsed);
+
+            unsigned int i = 0;
+            for (i = num1 - 1 - num1 / (maxNumOfThread - 1); i < num1; i++) {
+
+                hashtable[array1[i]] = 1;
+            }
+            printf("Done sub inserting array 1, from %d to %d \n", num1 - 1 - num1 / (maxNumOfThread - 1), num1);
+            printTimeElapsed(&t0, &t1, elapsed);
+            if (maxNumOfThread == 3) {
+                pthread_join(tid1, NULL);
+            } else if (maxNumOfThread > 3) {
+                pthread_join(tid1, NULL);
+                pthread_join(tid2, NULL);
+            }
+
+        } else {
+            unsigned int i = 0;
+            for (i = 0; i < num1; i++) {
+
+                hashtable[array1[i]] = 1;
+            }
+
         }
         printf("Inserting first file data completed.\n");
         printTimeElapsed(&t0, &t1, elapsed);
     } else if ((*insertParameter).tableID == 2) {
         printf("Start inserting second file data to array.\n");
         printTimeElapsed(&t0, &t1, elapsed);
-        unsigned int i = 0;
-        for (i = 0; i < num2; i++) {
 
-            hashtable2[array2[i]] = 1;
+        if (maxNumOfThread > 2) {
+            if (maxNumOfThread == 3) {
+                SubInsertParameter subInsertParameter1;
+                subInsertParameter1.tableID = 2;
+                subInsertParameter1.start = 0;
+                subInsertParameter1.end = num2 - 1 - num2 / (maxNumOfThread - 1);
+                pthread_create(&tid1, NULL, sub_parallel_insert, &subInsertParameter1);
+            } else if (maxNumOfThread > 3) {
+                SubInsertParameter subInsertParameter1;
+                subInsertParameter1.tableID = 2;
+                subInsertParameter1.start = 0;
+                subInsertParameter1.end = num2 - 1 - ((num2 / (maxNumOfThread - 1)) * 2);
+                pthread_create(&tid1, NULL, sub_parallel_insert, &subInsertParameter1);
+                SubInsertParameter subInsertParameter2;
+                subInsertParameter2.tableID = 2;
+                subInsertParameter2.start = num2 - 1 - ((num2 / (maxNumOfThread - 1)) * 2);
+                subInsertParameter2.end = num2 - 1 - num2 / (maxNumOfThread - 1);
+                pthread_create(&tid2, NULL, sub_parallel_insert, &subInsertParameter2);
+            }
+
+            printf("Start sub inserting array 2, from %d to %d \n", num2 - 1 - num2 / (maxNumOfThread - 1), num2);
+            printTimeElapsed(&t0, &t1, elapsed);
+            unsigned int i = 0;
+            for (i = num2 - 1 - num2 / (maxNumOfThread - 1); i < num2; i++) {
+
+                hashtable2[array2[i]] = 1;
+            }
+            printf("Done sub inserting array 2, from %d to %d \n", num2 - 1 - num2 / (maxNumOfThread - 1), num2);
+            printTimeElapsed(&t0, &t1, elapsed);
+            if (maxNumOfThread == 3) {
+                pthread_join(tid1, NULL);
+            } else if (maxNumOfThread > 3) {
+                pthread_join(tid1, NULL);
+                pthread_join(tid2, NULL);
+            }
+        } else {
+            unsigned int i = 0;
+            for (i = 0; i < num2; i++) {
+
+                hashtable2[array2[i]] = 1;
+            }
         }
         /*    for (i = 0; i < num2; i++) {
 
@@ -210,23 +325,50 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
+    maxNumOfThread = atoi(argv[4]);
 
 
+    if (maxNumOfThread > 1) {
 
-    if (atoi(argv[4]) > 1) {
-        readParameter1.filename = argv[1];
-        readParameter1.number = &num1;
-        readParameter1.array = array1;
+
+        printf("Start checking file size\n");
+        printTimeElapsed(&t0, &t1, elapsed);
+
+        struct stat st, st2;
+        stat(argv[1], &st);
+        stat(argv[2], &st2);
+        long size = st.st_size;
+        long size2 = st2.st_size;
+        printf("Done checking file size\n");
+        printTimeElapsed(&t0, &t1, elapsed);
+
+        if (size > size2) {
+            readParameter1.filename = argv[1];
+            readParameter1.number = &num1;
+            readParameter1.array = array1;
+
+            readParameter2.filename = argv[2];
+            readParameter2.number = &num2;
+            readParameter2.array = array2;
+        } else {
+            readParameter1.filename = argv[2];
+            readParameter1.number = &num1;
+            readParameter1.array = array1;
+
+            readParameter2.filename = argv[1];
+            readParameter2.number = &num2;
+            readParameter2.array = array2;
+
+        }
 
         pthread_create(&readThread_tid1, NULL, parallel_readdata, &readParameter1);
+        numOfThread++;
         printf("Read Thread 1 created \n");
         printTimeElapsed(&t0, &t1, elapsed);
 
-        readParameter2.filename = argv[2];
-        readParameter2.number = &num2;
-        readParameter2.array = array2;
 
         pthread_create(&readThread_tid2, NULL, parallel_readdata, &readParameter2);
+        numOfThread++;
         printf("Read Thread 2 created \n");
         printTimeElapsed(&t0, &t1, elapsed);
 /*
@@ -258,17 +400,19 @@ int main(int argc, char *argv[]) {
 //    array2 = readdata(argv[2], &num2);
     /* do your assignment start from here */
 
-    if (atoi(argv[4]) > 1) {
-        insertParameter1.tableID=1;
-        insertParameter1.readThread_tid=readThread_tid1;
-        pthread_create(&insertThread_tid1,NULL,parallel_insert,&insertParameter1);
+    if (maxNumOfThread > 1) {
+        insertParameter1.tableID = 1;
+        insertParameter1.readThread_tid = readThread_tid1;
+        pthread_create(&insertThread_tid1, NULL, parallel_insert, &insertParameter1);
+        numOfThread++;
 
         printf("Insert Thread 1 created \n");
         printTimeElapsed(&t0, &t1, elapsed);
 
-        insertParameter2.tableID=2;
-        insertParameter2.readThread_tid=readThread_tid2;
-        pthread_create(&insertThread_tid2,NULL,parallel_insert,&insertParameter2);
+        insertParameter2.tableID = 2;
+        insertParameter2.readThread_tid = readThread_tid2;
+        pthread_create(&insertThread_tid2, NULL, parallel_insert, &insertParameter2);
+        numOfThread++;
 
         printf("Insert Thread 2 created \n");
         printTimeElapsed(&t0, &t1, elapsed);
@@ -304,16 +448,21 @@ int main(int argc, char *argv[]) {
         printTimeElapsed(&t0, &t1, elapsed);
     }
 
-    if (atoi(argv[4]) > 1) {
-        pthread_join(insertThread_tid2,NULL);
+    if (maxNumOfThread > 1) {
+        pthread_join(insertThread_tid2, NULL);
+        numOfThread--;
         printf("Insert Thread 2 joined\n");
         printTimeElapsed(&t0, &t1, elapsed);
 
-        pthread_join(insertThread_tid1,NULL);
+        pthread_join(insertThread_tid1, NULL);
+        numOfThread--;
         printf("Insert Thread 1 joined\n");
         printTimeElapsed(&t0, &t1, elapsed);
     }
 
+
+    printf("Start writing to output file.\n");
+    printTimeElapsed(&t0, &t1, elapsed);
     char writeBuffer[WRITE_BUFFER_SIZE] = {'\0'};
     FILE *outputFile = fopen(argv[3], "w");
     setvbuf(outputFile, writeBuffer, _IOFBF, WRITE_BUFFER_SIZE);
@@ -331,8 +480,6 @@ int main(int argc, char *argv[]) {
     fclose(outputFile);
 
     printf("Write to output file completed.\n");
-
-
     printTimeElapsed(&t0, &t1, elapsed);
     /* FILE *fp=fopen(argv[3], "w");
      fclose(fp);*/
