@@ -248,3 +248,9 @@ gdb.exe.stackdump
 res/outputS0.txt
 res/tempperf
 res/tempperfread
+res/tempperf1
+res/tempperf2
+res/tempperf3
+res/tempperf4
+asg3-pthread
+asg3-openmp
