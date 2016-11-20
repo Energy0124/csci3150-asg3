@@ -21,11 +21,13 @@
 //#define TRUE_BUFFER_SIZE BUFFER_SIZE+1
 
 //TODO:: Change back to 100000000
-#define HASHTABLE_SIZE 100000000+1
+#define HASHTABLE_SIZE 100000000+2
 
 #define WRITE_BUFFER_SIZE 65536
 
-#define STR_BUFFER_SIZE 67
+#define STR_BUFFER_SIZE 16
+
+#define CACHE_SIZE HASHTABLE_SIZE / 2 + 2
 
 /* Function Declaration */
 double timedifference_msec(struct timeval t0, struct timeval t1);
@@ -38,7 +40,8 @@ void printTimeElapsed(struct timeval *t0, struct timeval *t1, double elapsed);
 
 static char hashtable[HASHTABLE_SIZE] = {0};
 static char hashtable2[HASHTABLE_SIZE] = {0};
-static int cache[4][HASHTABLE_SIZE / 4 + 2] = {0};
+static unsigned int cache[HASHTABLE_SIZE] = {0};
+static unsigned int cacheSize = 0;
 
 //static int cacheIndex[4]={0};
 //static bool hashtable1[100000000] = {false};
@@ -204,13 +207,13 @@ void *parallel_insert(void *parameter) {
         printTimeElapsed(&t0, &t1, elapsed);
         if (maxNumOfThread > 2) {
 
-            if (maxNumOfThread == 3) {
+            if (maxNumOfThread >= 3) {
                 SubInsertParameter subInsertParameter1;
                 subInsertParameter1.tableID = 1;
                 subInsertParameter1.start = 0;
                 subInsertParameter1.end = num1 - 1 - num1 / (maxNumOfThread - 1);
                 pthread_create(&tid1, NULL, sub_parallel_insert, &subInsertParameter1);
-            } else if (maxNumOfThread > 3) {
+            } /*else if (maxNumOfThread > 3) {
                 SubInsertParameter subInsertParameter1;
                 subInsertParameter1.tableID = 1;
                 subInsertParameter1.start = 0;
@@ -222,7 +225,7 @@ void *parallel_insert(void *parameter) {
                 subInsertParameter2.end = num1 - 1 - num1 / (maxNumOfThread - 1);
                 pthread_create(&tid2, NULL, sub_parallel_insert, &subInsertParameter2);
             }
-
+*/
             printf("Start sub inserting array 1, from %d to %d \n", (int) (num1 - 1 - num1 / (maxNumOfThread - 1)),
                    (int) num1);
             printTimeElapsed(&t0, &t1, elapsed);
@@ -235,13 +238,13 @@ void *parallel_insert(void *parameter) {
             printf("Done sub inserting array 1, from %d to %d \n", (int) (num1 - 1 - num1 / (maxNumOfThread - 1)),
                    (int) num1);
             printTimeElapsed(&t0, &t1, elapsed);
-            if (maxNumOfThread == 3) {
+            if (maxNumOfThread >= 3) {
                 pthread_join(tid1, NULL);
-            } else if (maxNumOfThread > 3) {
+            } /*else if (maxNumOfThread > 3) {
                 pthread_join(tid1, NULL);
                 pthread_join(tid2, NULL);
             }
-
+*/
         } else {
             unsigned int i = 0;
             for (i = 0; i < num1; i++) {
@@ -257,13 +260,13 @@ void *parallel_insert(void *parameter) {
         printTimeElapsed(&t0, &t1, elapsed);
 
         if (maxNumOfThread > 2) {
-            if (maxNumOfThread == 3) {
+            if (maxNumOfThread >= 3) {
                 SubInsertParameter subInsertParameter1;
                 subInsertParameter1.tableID = 2;
                 subInsertParameter1.start = 0;
                 subInsertParameter1.end = num2 - 1 - num2 / (maxNumOfThread - 1);
                 pthread_create(&tid1, NULL, sub_parallel_insert, &subInsertParameter1);
-            } else if (maxNumOfThread > 3) {
+            }/* else if (maxNumOfThread > 3) {
                 SubInsertParameter subInsertParameter1;
                 subInsertParameter1.tableID = 2;
                 subInsertParameter1.start = 0;
@@ -274,7 +277,7 @@ void *parallel_insert(void *parameter) {
                 subInsertParameter2.start = num2 - 1 - ((num2 / (maxNumOfThread - 1)) * 2);
                 subInsertParameter2.end = num2 - 1 - num2 / (maxNumOfThread - 1);
                 pthread_create(&tid2, NULL, sub_parallel_insert, &subInsertParameter2);
-            }
+            }*/
 
             printf("Start sub inserting array 2, from %d to %d \n", (int) (num2 - 1 - num2 / (maxNumOfThread - 1)),
                    (int) num2);
@@ -287,12 +290,12 @@ void *parallel_insert(void *parameter) {
             printf("Done sub inserting array 2, from %d to %d \n", (int) (num2 - 1 - num2 / (maxNumOfThread - 1)),
                    (int) num2);
             printTimeElapsed(&t0, &t1, elapsed);
-            if (maxNumOfThread == 3) {
+            if (maxNumOfThread >= 3) {
                 pthread_join(tid1, NULL);
-            } else if (maxNumOfThread > 3) {
+            }/* else if (maxNumOfThread > 3) {
                 pthread_join(tid1, NULL);
                 pthread_join(tid2, NULL);
-            }
+            }*/
         } else {
             unsigned int i = 0;
             for (i = 0; i < num2; i++) {
@@ -316,6 +319,21 @@ void *parallel_insert(void *parameter) {
 
     printf("Done inserting array %d \n", (*insertParameter).tableID);
     printTimeElapsed(&t0, &t1, elapsed);
+
+    if (maxNumOfThread > 3 && (*insertParameter).tableID == 2) {
+        printf("Start caching for table %d \n", (*insertParameter).tableID);
+        printTimeElapsed(&t0, &t1, elapsed);
+        unsigned int i = 0;
+        for (i = 0; i < HASHTABLE_SIZE; i++) {
+            if (hashtable2[i]) {
+                cache[cacheSize++] = i;
+            }
+
+        }
+        printf("Done caching for table %d \n", (*insertParameter).tableID);
+        printTimeElapsed(&t0, &t1, elapsed);
+    }
+
 }
 
 int main(int argc, char *argv[]) {
@@ -472,14 +490,32 @@ int main(int argc, char *argv[]) {
     FILE *outputFile = fopen(argv[3], "w");
     setvbuf(outputFile, writeBuffer, _IOFBF, WRITE_BUFFER_SIZE);
     char strBuffer[STR_BUFFER_SIZE];
-    unsigned int i = 0;
-    for (i = 0; i < HASHTABLE_SIZE; i++) {
-        if (hashtable[i] && hashtable2[i]) {
-            char *str = itoaBase10(strBuffer, i);
-            fwrite(str, 1, (size_t) uintlen(i), outputFile);
-            fwrite("\n", 1, 1, outputFile);
-//            	fprintf(outputFile,"%d\n",i);
+    if (maxNumOfThread <= 3) {
+        printf("Start writing without cache.\n");
+        printTimeElapsed(&t0, &t1, elapsed);
+        unsigned int i = 0;
+        for (i = 0; i < HASHTABLE_SIZE; i++) {
+            if (hashtable[i] && hashtable2[i]) {
+                char *str = itoaBase10(strBuffer, i);
+                fwrite(str, 1, (size_t) uintlen(i), outputFile);
+                fwrite("\n", 1, 1, outputFile);
+                //            	fprintf(outputFile,"%d\n",i);
+            }
         }
+    } else {
+        printf("Start writing with cache.\n");
+        printTimeElapsed(&t0, &t1, elapsed);
+        unsigned int i = 0;
+        for (i = 0; i < cacheSize; i++) {
+            if (hashtable[cache[i]]) {
+                char *str = itoaBase10(strBuffer, cache[i]);
+                fwrite(str, 1, (size_t) uintlen(cache[i]), outputFile);
+                fwrite("\n", 1, 1, outputFile);
+                //            	fprintf(outputFile,"%d\n",i);
+            }
+
+        }
+
     }
     fflush(outputFile);
     fclose(outputFile);
