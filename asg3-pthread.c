@@ -38,7 +38,7 @@ void printTimeElapsed(struct timeval *t0, struct timeval *t1, double elapsed);
 
 static char hashtable[HASHTABLE_SIZE] = {0};
 static char hashtable2[HASHTABLE_SIZE] = {0};
-static int cache[4][HASHTABLE_SIZE / 4 + 1] = {0};
+static int cache[4][HASHTABLE_SIZE / 4 + 2] = {0};
 
 //static int cacheIndex[4]={0};
 //static bool hashtable1[100000000] = {false};
@@ -131,7 +131,7 @@ typedef struct subInsertParameter {
 
 int *array1, *array2;
 long num1, num2;
-int numOfThread = 0;
+int numOfThread = 1;
 int maxNumOfThread = 0;
 pthread_t readThread_tid1, readThread_tid2;
 pthread_t insertThread_tid1, insertThread_tid2;
@@ -157,7 +157,8 @@ void *sub_parallel_insert(void *parameter) {
 
     int start = (*((SubInsertParameter *) parameter)).start;
     int end = (*((SubInsertParameter *) parameter)).end;
-    printf("Start sub inserting array %d, from %d to %d \n", (*((SubInsertParameter *) parameter)).tableID,start, end);
+    printf("Current numOfThread: %d\n", numOfThread);
+    printf("Start sub inserting array %d, from %d to %d \n", (*((SubInsertParameter *) parameter)).tableID, start, end);
     printTimeElapsed(&t0, &t1, elapsed);
     int *array = NULL;
     char *table = NULL;
@@ -172,7 +173,7 @@ void *sub_parallel_insert(void *parameter) {
     for (i = start; i < end; ++i) {
         table[array[i]] = 1;
     }
-    printf("Done sub inserting array %d, from %d to %d \n", (*((SubInsertParameter *) parameter)).tableID,start, end);
+    printf("Done sub inserting array %d, from %d to %d \n", (*((SubInsertParameter *) parameter)).tableID, start, end);
     printTimeElapsed(&t0, &t1, elapsed);
 }
 
@@ -222,7 +223,8 @@ void *parallel_insert(void *parameter) {
                 pthread_create(&tid2, NULL, sub_parallel_insert, &subInsertParameter2);
             }
 
-            printf("Start sub inserting array 1, from %d to %d \n", num1 - 1 - num1 / (maxNumOfThread - 1), num1);
+            printf("Start sub inserting array 1, from %d to %d \n", (int) (num1 - 1 - num1 / (maxNumOfThread - 1)),
+                   (int) num1);
             printTimeElapsed(&t0, &t1, elapsed);
 
             unsigned int i = 0;
@@ -230,7 +232,8 @@ void *parallel_insert(void *parameter) {
 
                 hashtable[array1[i]] = 1;
             }
-            printf("Done sub inserting array 1, from %d to %d \n", num1 - 1 - num1 / (maxNumOfThread - 1), num1);
+            printf("Done sub inserting array 1, from %d to %d \n", (int) (num1 - 1 - num1 / (maxNumOfThread - 1)),
+                   (int) num1);
             printTimeElapsed(&t0, &t1, elapsed);
             if (maxNumOfThread == 3) {
                 pthread_join(tid1, NULL);
@@ -273,14 +276,16 @@ void *parallel_insert(void *parameter) {
                 pthread_create(&tid2, NULL, sub_parallel_insert, &subInsertParameter2);
             }
 
-            printf("Start sub inserting array 2, from %d to %d \n", num2 - 1 - num2 / (maxNumOfThread - 1), num2);
+            printf("Start sub inserting array 2, from %d to %d \n", (int) (num2 - 1 - num2 / (maxNumOfThread - 1)),
+                   (int) num2);
             printTimeElapsed(&t0, &t1, elapsed);
             unsigned int i = 0;
             for (i = num2 - 1 - num2 / (maxNumOfThread - 1); i < num2; i++) {
 
                 hashtable2[array2[i]] = 1;
             }
-            printf("Done sub inserting array 2, from %d to %d \n", num2 - 1 - num2 / (maxNumOfThread - 1), num2);
+            printf("Done sub inserting array 2, from %d to %d \n", (int) (num2 - 1 - num2 / (maxNumOfThread - 1)),
+                   (int) num2);
             printTimeElapsed(&t0, &t1, elapsed);
             if (maxNumOfThread == 3) {
                 pthread_join(tid1, NULL);
@@ -473,7 +478,7 @@ int main(int argc, char *argv[]) {
             char *str = itoaBase10(strBuffer, i);
             fwrite(str, 1, (size_t) uintlen(i), outputFile);
             fwrite("\n", 1, 1, outputFile);
-            //fprintf(outputFile,"%d\n",i);
+//            	fprintf(outputFile,"%d\n",i);
         }
     }
     fflush(outputFile);
