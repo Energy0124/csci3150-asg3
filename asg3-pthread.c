@@ -2,19 +2,21 @@
 * CSCI3150 Assignment 3 - Implement pthread and openmp program
 *
 */
+#define DEBUG_MODE 0
 
 /* Header Declaration */
 #include <stdio.h>
+#include <stdarg.h>
 #include <pthread.h>
 #include <fcntl.h>
-#include <unistd.h>
-#include <errno.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <memory.h>
 #include <stdint.h>
 #include <sys/stat.h>
-#include <sys/time.h>
+
+//#include <sys/time.h>
+
+
 
 
 //#define BUFFER_SIZE 1024 + 1
@@ -29,12 +31,13 @@
 
 #define CACHE_SIZE HASHTABLE_SIZE / 2 + 2
 
+
 /* Function Declaration */
 double timedifference_msec(struct timeval t0, struct timeval t1);
 
 extern int *readdata(char *filename, long *number);
 
-void printTimeElapsed(struct timeval *t0, struct timeval *t1, double elapsed);
+//void printTimeElapsed(struct timeval *t0, struct timeval *t1, double elapsed);
 
 /* Main */
 
@@ -54,9 +57,28 @@ static unsigned int cacheSize = 0;
 //static bool hashtable8[100000000] = {false};
 //static bool hashtable9[100000000] = {false};
 
+void __wrap_printf(const char *format, ...) {
+    if (!DEBUG_MODE) { return; }
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+
+
+}//override the printf
+#define printf __wrap_printf
+
 double timedifference_msec(struct timeval t0, struct timeval t1) {
     return (t1.tv_sec - t0.tv_sec) * 1000.0f + (t1.tv_usec - t0.tv_usec) / 1000.0f;
 }
+
+/*
+void printTimeElapsed(struct timeval *t0, struct timeval *t1, double elapsed) {
+    if (!DEBUG_MODE) { return; }
+    gettimeofday(t1, 0);
+    elapsed = timedifference_msec((*t0), (*t1));
+    printf("Code executed in %f milliseconds.\n", elapsed);
+}*/
 
 static uint16_t const str100p[100] = { /* 0x3030, 0x3130, 0x3230 .. 0x3930, 0x3031 .. 0x3939 */
 
@@ -150,10 +172,10 @@ double elapsed;
 void *parallel_readdata(void *parameter) {
     ReadParameter *readParameter = (ReadParameter *) parameter;
     printf("Start reading %s \n", (*readParameter).filename);
-    printTimeElapsed(&t0, &t1, elapsed);
+    //printTimeElapsed(&t0, &t1, elapsed);
     (*readParameter).array = readdata((*readParameter).filename, (*readParameter).number);
     printf("Done reading %s \n", (*readParameter).filename);
-    printTimeElapsed(&t0, &t1, elapsed);
+    //printTimeElapsed(&t0, &t1, elapsed);
 }
 
 void *sub_parallel_insert(void *parameter) {
@@ -162,7 +184,7 @@ void *sub_parallel_insert(void *parameter) {
     int end = (*((SubInsertParameter *) parameter)).end;
     printf("Current numOfThread: %d\n", numOfThread);
     printf("Start sub inserting array %d, from %d to %d \n", (*((SubInsertParameter *) parameter)).tableID, start, end);
-    printTimeElapsed(&t0, &t1, elapsed);
+    //printTimeElapsed(&t0, &t1, elapsed);
     int *array = NULL;
     char *table = NULL;
     if ((*((SubInsertParameter *) parameter)).tableID == 1) {
@@ -177,7 +199,7 @@ void *sub_parallel_insert(void *parameter) {
         table[array[i]] = 1;
     }
     printf("Done sub inserting array %d, from %d to %d \n", (*((SubInsertParameter *) parameter)).tableID, start, end);
-    printTimeElapsed(&t0, &t1, elapsed);
+    //printTimeElapsed(&t0, &t1, elapsed);
 }
 
 void *parallel_insert(void *parameter) {
@@ -195,16 +217,16 @@ void *parallel_insert(void *parameter) {
     }
 
     printf("Read Thread %d joined\n", (*insertParameter).tableID);
-    printTimeElapsed(&t0, &t1, elapsed);
+    //printTimeElapsed(&t0, &t1, elapsed);
 
     printf("Start inserting array %d \n", (*insertParameter).tableID);
-    printTimeElapsed(&t0, &t1, elapsed);
+    //printTimeElapsed(&t0, &t1, elapsed);
 
     pthread_t tid1, tid2;
 
     if ((*insertParameter).tableID == 1) {
         printf("Start inserting first file data to array.\n");
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
         if (maxNumOfThread > 2) {
 
             if (maxNumOfThread >= 3) {
@@ -228,7 +250,7 @@ void *parallel_insert(void *parameter) {
 */
             printf("Start sub inserting array 1, from %d to %d \n", (int) (num1 - 1 - num1 / (maxNumOfThread - 1)),
                    (int) num1);
-            printTimeElapsed(&t0, &t1, elapsed);
+            //printTimeElapsed(&t0, &t1, elapsed);
 
             unsigned int i = 0;
             for (i = num1 - 1 - num1 / (maxNumOfThread - 1); i < num1; i++) {
@@ -237,7 +259,7 @@ void *parallel_insert(void *parameter) {
             }
             printf("Done sub inserting array 1, from %d to %d \n", (int) (num1 - 1 - num1 / (maxNumOfThread - 1)),
                    (int) num1);
-            printTimeElapsed(&t0, &t1, elapsed);
+            //printTimeElapsed(&t0, &t1, elapsed);
             if (maxNumOfThread >= 3) {
                 pthread_join(tid1, NULL);
             } /*else if (maxNumOfThread > 3) {
@@ -254,10 +276,10 @@ void *parallel_insert(void *parameter) {
 
         }
         printf("Inserting first file data completed.\n");
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
     } else if ((*insertParameter).tableID == 2) {
         printf("Start inserting second file data to array.\n");
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
 
         if (maxNumOfThread > 2) {
             if (maxNumOfThread >= 3) {
@@ -281,7 +303,7 @@ void *parallel_insert(void *parameter) {
 
             printf("Start sub inserting array 2, from %d to %d \n", (int) (num2 - 1 - num2 / (maxNumOfThread - 1)),
                    (int) num2);
-            printTimeElapsed(&t0, &t1, elapsed);
+            //printTimeElapsed(&t0, &t1, elapsed);
             unsigned int i = 0;
             for (i = num2 - 1 - num2 / (maxNumOfThread - 1); i < num2; i++) {
 
@@ -289,7 +311,7 @@ void *parallel_insert(void *parameter) {
             }
             printf("Done sub inserting array 2, from %d to %d \n", (int) (num2 - 1 - num2 / (maxNumOfThread - 1)),
                    (int) num2);
-            printTimeElapsed(&t0, &t1, elapsed);
+            //printTimeElapsed(&t0, &t1, elapsed);
             if (maxNumOfThread >= 3) {
                 pthread_join(tid1, NULL);
             }/* else if (maxNumOfThread > 3) {
@@ -313,16 +335,16 @@ void *parallel_insert(void *parameter) {
             }
         }*/
         printf("Inserting second file data completed.\n");
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
     }
 
 
     printf("Done inserting array %d \n", (*insertParameter).tableID);
-    printTimeElapsed(&t0, &t1, elapsed);
+    //printTimeElapsed(&t0, &t1, elapsed);
 
     if (maxNumOfThread > 3 && (*insertParameter).tableID == 2) {
         printf("Start caching for table %d \n", (*insertParameter).tableID);
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
         unsigned int i = 0;
         for (i = 0; i < HASHTABLE_SIZE; i++) {
             if (hashtable2[i]) {
@@ -331,7 +353,7 @@ void *parallel_insert(void *parameter) {
 
         }
         printf("Done caching for table %d \n", (*insertParameter).tableID);
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
     }
 
 }
@@ -339,7 +361,7 @@ void *parallel_insert(void *parameter) {
 int main(int argc, char *argv[]) {
 
 
-    gettimeofday(&t0, 0);
+    //gettimeofday(&t0, 0);
 
     if (argc != 5) {
         printf("usage:\n");
@@ -355,7 +377,7 @@ int main(int argc, char *argv[]) {
 
 
         printf("Start checking file size\n");
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
 
         struct stat st, st2;
         stat(argv[1], &st);
@@ -363,7 +385,7 @@ int main(int argc, char *argv[]) {
         long size = st.st_size;
         long size2 = st2.st_size;
         printf("Done checking file size\n");
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
 
         if (size > size2) {
             readParameter1.filename = argv[1];
@@ -387,22 +409,22 @@ int main(int argc, char *argv[]) {
         pthread_create(&readThread_tid1, NULL, parallel_readdata, &readParameter1);
         numOfThread++;
         printf("Read Thread 1 created \n");
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
 
 
         pthread_create(&readThread_tid2, NULL, parallel_readdata, &readParameter2);
         numOfThread++;
         printf("Read Thread 2 created \n");
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
 /*
         pthread_join(readThread_tid1, NULL);
         array1 = readParameter1.array;
         printf("Read Thread 1 joined \n");
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
         pthread_join(readThread_tid2, NULL);
         array2 = readParameter2.array;
         printf("Read Thread 2 joined \n");
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
 */
 
 
@@ -410,10 +432,10 @@ int main(int argc, char *argv[]) {
 
         array1 = readdata(argv[1], &num1);
         printf("Read file1.\n");
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
         array2 = readdata(argv[2], &num2);
         printf("Read file2.\n");
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
     }
 
 
@@ -430,7 +452,7 @@ int main(int argc, char *argv[]) {
         numOfThread++;
 
         printf("Insert Thread 1 created \n");
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
 
         insertParameter2.tableID = 2;
         insertParameter2.readThread_tid = readThread_tid2;
@@ -438,22 +460,22 @@ int main(int argc, char *argv[]) {
         numOfThread++;
 
         printf("Insert Thread 2 created \n");
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
     } else {
 
         printf("Start inserting first file data to array.\n");
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
         unsigned int i = 0;
         for (i = 0; i < num1; i++) {
 
             hashtable[array1[i]] = 1;
         }
         printf("Inserting first file data completed.\n");
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
 
 
         printf("Start inserting second file data to array.\n");
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
         for (i = 0; i < num2; i++) {
 
             hashtable2[array2[i]] = 1;
@@ -468,31 +490,31 @@ int main(int argc, char *argv[]) {
             }
         }*/
         printf("Inserting second file data completed.\n");
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
     }
 
     if (maxNumOfThread > 1) {
         pthread_join(insertThread_tid2, NULL);
         numOfThread--;
         printf("Insert Thread 2 joined\n");
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
 
         pthread_join(insertThread_tid1, NULL);
         numOfThread--;
         printf("Insert Thread 1 joined\n");
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
     }
 
 
     printf("Start writing to output file.\n");
-    printTimeElapsed(&t0, &t1, elapsed);
+    //printTimeElapsed(&t0, &t1, elapsed);
     char writeBuffer[WRITE_BUFFER_SIZE] = {'\0'};
     FILE *outputFile = fopen(argv[3], "w");
     setvbuf(outputFile, writeBuffer, _IOFBF, WRITE_BUFFER_SIZE);
     char strBuffer[STR_BUFFER_SIZE];
     if (maxNumOfThread <= 3) {
         printf("Start writing without cache.\n");
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
         unsigned int i = 0;
         for (i = 0; i < HASHTABLE_SIZE; i++) {
             if (hashtable[i] && hashtable2[i]) {
@@ -504,7 +526,7 @@ int main(int argc, char *argv[]) {
         }
     } else {
         printf("Start writing with cache.\n");
-        printTimeElapsed(&t0, &t1, elapsed);
+        //printTimeElapsed(&t0, &t1, elapsed);
         unsigned int i = 0;
         for (i = 0; i < cacheSize; i++) {
             if (hashtable[cache[i]]) {
@@ -521,15 +543,15 @@ int main(int argc, char *argv[]) {
     fclose(outputFile);
 
     printf("Write to output file completed.\n");
-    printTimeElapsed(&t0, &t1, elapsed);
+    //printTimeElapsed(&t0, &t1, elapsed);
+
+    //gettimeofday(&t1, 0);
+//    elapsed = timedifference_msec(t0, t1);
+//    fprintf(stdout,"Code executed in %f milliseconds.\n", elapsed);
     /* FILE *fp=fopen(argv[3], "w");
      fclose(fp);*/
 
     return 0;
 }
 
-void printTimeElapsed(struct timeval *t0, struct timeval *t1, double elapsed) {
-    gettimeofday(t1, 0);
-    elapsed = timedifference_msec((*t0), (*t1));
-    printf("Code executed in %f milliseconds.\n", elapsed);
-}
+
