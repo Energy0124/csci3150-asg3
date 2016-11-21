@@ -513,7 +513,7 @@ int main(int argc, char *argv[]) {
         for (j = 0; j < 4 - maxNumOfThread; ++j) {
             timePassCounter(1);
             timePassCounter(1);
-            timePassCounter(1);
+
             unsigned int i = 0;
             for (i = 0; i < HASHTABLE_SIZE; ++i) {
                 /*     unsigned int tmp = cache[i];
@@ -528,7 +528,9 @@ int main(int argc, char *argv[]) {
                 // fprintf( nothing, "NULL : %f \n", elapsed);
 
             }
+            timePassCounter(1);
         }
+
     }
 
 
@@ -580,4 +582,8 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+/*
 
+　 　 Ｈ　Ａ　Ｔ　Ｓ　Ｕ　Ｎ　Ｅ 　 Ｍ　Ｉ　Ｋ　Ｕ　　 　
+
+ */

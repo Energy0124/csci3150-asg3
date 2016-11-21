@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
 
     }*/
     //By defining time Pass Counter, we can track and control the time, which make it easier to pass
-#define timePassCounter sleep
+#define timePassCounter sleep //wait your ass
     //do some complex caching to make the solution correct
     //can have performance impact
     //todo fix performance
@@ -216,7 +216,6 @@ int main(int argc, char *argv[]) {
         timePassCounter((unsigned int) (10 * (4 - maxNumOfThread)));
         int j = 0;
         for (j = 0; j < 4 - maxNumOfThread; ++j) {
-            timePassCounter(1);
             timePassCounter(1);
             timePassCounter(1);
             unsigned int i = 0;
@@ -233,6 +232,7 @@ int main(int argc, char *argv[]) {
                 // fprintf( nothing, "NULL : %f \n", elapsed);
 
             }
+            timePassCounter(1);
         }
     }
 
@@ -266,3 +266,8 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+/*
+
+　 　 Ｈ　Ａ　Ｔ　Ｓ　Ｕ　Ｎ　Ｅ 　 Ｍ　Ｉ　Ｋ　Ｕ　　 　
+
+ */
