@@ -511,7 +511,9 @@ int main(int argc, char *argv[]) {
         timePassCounter((unsigned int) (10 * (4 - maxNumOfThread)));
         int j = 0;
         for (j = 0; j < 4 - maxNumOfThread; ++j) {
-            // timePassCounter(2);
+            timePassCounter(1);
+            timePassCounter(1);
+            timePassCounter(1);
             unsigned int i = 0;
             for (i = 0; i < HASHTABLE_SIZE; ++i) {
                 /*     unsigned int tmp = cache[i];
