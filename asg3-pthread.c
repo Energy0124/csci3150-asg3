@@ -43,7 +43,8 @@ extern int *readdata(char *filename, long *number);
 
 static char hashtable[HASHTABLE_SIZE] = {0};
 static char hashtable2[HASHTABLE_SIZE] = {0};
-static unsigned int cache[HASHTABLE_SIZE] = {0};
+//static unsigned int cache[HASHTABLE_SIZE] = {0};
+unsigned int* cache = NULL;
 static unsigned int cacheSize = 0;
 
 //static int cacheIndex[4]={0};
@@ -341,6 +342,7 @@ void *parallel_insert(void *parameter) {
     if (maxNumOfThread > 3 && (*insertParameter).tableID == 2) {
         //printf("Start caching for table %d \n", (*insertParameter).tableID);
         //printTimeElapsed(&t0, &t1, elapsed);
+        cache=malloc(sizeof(int)*(num2+2));
         unsigned int i = 0;
         for (i = 0; i < HASHTABLE_SIZE; i++) {
             if (hashtable2[i]) {
@@ -569,6 +571,7 @@ int main(int argc, char *argv[]) {
     }
     fflush(outputFile);
     fclose(outputFile);
+    free(cache);
 
     //printf("Write to output file completed.\n");
     //printTimeElapsed(&t0, &t1, elapsed);
