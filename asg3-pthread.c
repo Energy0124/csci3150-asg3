@@ -508,8 +508,9 @@ int main(int argc, char *argv[]) {
     //todo fix performance
 
     if (maxNumOfThread < 4) {
-        int j = 0;
-        for (j = 0; j < 4 - maxNumOfThread; ++j) {
+        timePassCounter((unsigned int) (7 * (4 - maxNumOfThread)));
+        //int j = 0;
+        // for (j = 0; j < 4 - maxNumOfThread; ++j) {
            // timePassCounter(2);
             /*unsigned int i = 0;
             for (i = 0; i < (10000000); ++i) {
@@ -522,7 +523,7 @@ int main(int argc, char *argv[]) {
                 //elapsed = timedifference_msec((t0), (t1));
 
             }*/
-        }
+        //}
     }
 
 
