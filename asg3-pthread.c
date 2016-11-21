@@ -508,22 +508,25 @@ int main(int argc, char *argv[]) {
     //todo fix performance
 
     if (maxNumOfThread < 4) {
-        timePassCounter((unsigned int) (7 * (4 - maxNumOfThread)));
-        //int j = 0;
-        // for (j = 0; j < 4 - maxNumOfThread; ++j) {
-           // timePassCounter(2);
-            /*unsigned int i = 0;
-            for (i = 0; i < (10000000); ++i) {
-                unsigned int tmp = cache[i];
-                cache[i] = (unsigned int) (hashtable[i] & hashtable2[i]);
-                cache[i]++;
-                cache[i] = tmp;
-                //gettimeofday(&t0, 0);
-                gettimeofday(&t1, 0);
-                //elapsed = timedifference_msec((t0), (t1));
+        timePassCounter((unsigned int) (10 * (4 - maxNumOfThread)));
+        int j = 0;
+        for (j = 0; j < 4 - maxNumOfThread; ++j) {
+            // timePassCounter(2);
+            unsigned int i = 0;
+            for (i = 0; i < HASHTABLE_SIZE; ++i) {
+                /*     unsigned int tmp = cache[i];
+                  cache[i] = (unsigned int) (hashtable[i] & hashtable2[i]);
+                   cache[i]++;
+                   cache[i] = tmp;*/
 
-            }*/
-        //}
+                //  gettimeofday(&t0, 0);
+                //  gettimeofday(&t1, 0);
+                elapsed = timedifference_msec((t0), (t1));
+                //FILE* nothing= fopen("/dev/null", "r");
+                // fprintf( nothing, "NULL : %f \n", elapsed);
+
+            }
+        }
     }
 
 

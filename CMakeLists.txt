@@ -25,3 +25,5 @@ add_custom_target(csci3150_asg3_release_pthread_make ALL COMMAND make -C ${CMAKE
 
 add_executable(csci3150_asg3_release_pthread_v2 ${SOURCE_FILES_PTHREAD_V2})
 add_executable(csci3150_asg3_release_openmp_v2 ${SOURCE_FILES_OPENMP_V2})
+add_custom_target(csci3150_asg3_release_omp_make ALL COMMAND make -C ${CMAKE_CURRENT_SOURCE_DIR}
+        CLION_EXE_DIR=${PROJECT_BINARY_DIR})
