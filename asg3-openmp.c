@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
     omp_set_num_threads(maxNumOfThread);
     omp_set_nested(1);
 
-    printf("Max number of thread: %d\n", maxNumOfThread);
+    //printf("Max number of thread: %d\n", maxNumOfThread);
     if (maxNumOfThread > 1) {
 
 
@@ -165,9 +165,9 @@ int main(int argc, char *argv[]) {
         {
 #pragma omp section
             {
-                test("start read 1");
+                //test("start read 1");
                 array1 = readdata(argv[1], &num1);
-                test("end read 1");
+                //test("end read 1");
                 int i = 0;
 #pragma omp parallel for
                 for (i = 0; i < num1; i++) {
@@ -177,9 +177,9 @@ int main(int argc, char *argv[]) {
             }
 #pragma omp section
             {
-                test("start read 2");
+                //test("start read 2");
                 array2 = readdata(argv[2], &num2);
-                test("end read 2");
+                //test("end read 2");
                 int i = 0;
 #pragma omp parallel for
                 for (i = 0; i < num2; i++) {
